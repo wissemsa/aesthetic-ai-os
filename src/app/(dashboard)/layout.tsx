@@ -1,72 +1,109 @@
 import { ReactNode } from "react";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
+import { getActiveClinicContext } from "@/lib/clinic";
 import { Button } from "@/components/ui/button";
 import { signout } from "../(auth)/actions";
+import Link from "next/link";
+import {
+  LayoutDashboard,
+  Users,
+  Target,
+  Calendar,
+  Sparkles,
+  LogOut,
+} from "lucide-react";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
-
-  // Check if the user is a member of any clinic
-  const { data: memberships, error } = await supabase
-    .from("clinic_members")
-    .select("clinic_id, clinics(name)")
-    .eq("user_id", user.id);
-
-  if (error || !memberships || memberships.length === 0) {
-    redirect("/onboarding");
-  }
-
-  // For now, we'll just use the first clinic as the active one
-  // Later we can implement a clinic switcher
-  const activeClinic = (memberships[0].clinics as unknown) as { name: string };
+  const ctx = await getActiveClinicContext();
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950">
       {/* Sidebar */}
-      <aside className="w-64 flex-col border-r border-gray-200 bg-white hidden md:flex">
-        <div className="flex h-16 items-center px-6 border-b border-gray-100">
-          <span className="text-lg font-bold tracking-tight text-gray-900 truncate">
-            {activeClinic.name || "Aesthetic OS"}
-          </span>
-        </div>
-        <nav className="flex-1 space-y-1 px-4 py-6">
-          <a href="/dashboard" className="flex items-center rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-900">
-            Dashboard
-          </a>
-          <a href="#" className="flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900">
-            Patients
-          </a>
-          <a href="#" className="flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900">
-            Appointments
-          </a>
-        </nav>
-        <div className="p-4 border-t border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-gray-200" />
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-gray-900 truncate max-w-[140px]">
-                {user.email}
-              </span>
+      <aside className="w-64 flex-col border-r border-zinc-200/80 bg-white hidden md:flex dark:border-zinc-800 dark:bg-zinc-900">
+        <div className="flex h-16 items-center px-6 border-b border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-zinc-900 text-white dark:bg-zinc-50 dark:text-zinc-900">
+              <Sparkles className="h-4 w-4" />
             </div>
+            <span className="text-sm font-bold tracking-tight text-zinc-900 truncate dark:text-zinc-50">
+              {ctx.clinic.name}
+            </span>
+          </div>
+        </div>
+
+        <nav className="flex-1 space-y-1 px-3 py-6">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 transition"
+          >
+            <LayoutDashboard className="h-4 w-4 text-zinc-400" />
+            Dashboard
+          </Link>
+          <Link
+            href="/patients"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 transition"
+          >
+            <Users className="h-4 w-4 text-zinc-400" />
+            Patients
+          </Link>
+          <Link
+            href="/leads"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 transition"
+          >
+            <Target className="h-4 w-4 text-zinc-400" />
+            Leads & Pipeline
+          </Link>
+          <div className="pt-2">
+            <span className="px-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
+              Coming Soon
+            </span>
+            <div className="mt-1 flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-zinc-400 cursor-not-allowed">
+              <Calendar className="h-4 w-4 text-zinc-300 dark:text-zinc-600" />
+              Appointments (Phase 4)
+            </div>
+          </div>
+        </nav>
+
+        <div className="p-4 border-t border-zinc-100 dark:border-zinc-800">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                {ctx.user.email?.[0]?.toUpperCase() || "U"}
+              </div>
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs font-medium text-zinc-900 truncate max-w-[110px] dark:text-zinc-100">
+                  {ctx.user.email}
+                </span>
+                <span className="text-[10px] text-zinc-400 capitalize">
+                  {ctx.role}
+                </span>
+              </div>
+            </div>
+            <form action={signout}>
+              <button
+                type="submit"
+                title="Sign Out"
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 transition"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
+            </form>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 flex items-center justify-between border-b border-gray-200 bg-white px-6 md:px-8">
-          <div className="flex items-center md:hidden">
-            <span className="text-lg font-bold">Aesthetic OS</span>
+        <header className="h-16 flex items-center justify-between border-b border-zinc-200/80 bg-white px-6 md:px-8 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="flex items-center gap-2 md:hidden">
+            <span className="text-sm font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+              {ctx.clinic.name}
+            </span>
           </div>
-          <div className="ml-auto flex items-center space-x-4">
-            <form action={signout}>
-              <Button variant="ghost" size="sm" type="submit">Sign Out</Button>
+          <div className="ml-auto flex items-center space-x-3">
+            <form action={signout} className="md:hidden">
+              <Button variant="ghost" size="sm" type="submit">
+                Sign Out
+              </Button>
             </form>
           </div>
         </header>
@@ -77,4 +114,5 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     </div>
   );
 }
+
 
