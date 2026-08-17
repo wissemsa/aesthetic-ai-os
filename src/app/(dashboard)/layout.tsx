@@ -52,15 +52,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             <Target className="h-4 w-4 text-zinc-400" />
             Leads & Pipeline
           </Link>
-          <div className="pt-2">
-            <span className="px-3 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-              Coming Soon
-            </span>
-            <div className="mt-1 flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-zinc-400 cursor-not-allowed">
-              <Calendar className="h-4 w-4 text-zinc-300 dark:text-zinc-600" />
-              Appointments (Phase 4)
-            </div>
-          </div>
+          <Link
+            href="/appointments"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 transition"
+          >
+            <Calendar className="h-4 w-4 text-zinc-400" />
+            Appointments
+          </Link>
         </nav>
 
         <div className="p-4 border-t border-zinc-100 dark:border-zinc-800">
