@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { signout } from "../(auth)/actions";
 
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const supabase = await createClient();
@@ -11,18 +12,31 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     redirect("/login");
   }
 
-  // NOTE: In the future, we will fetch the tenant list and allow selection
-  // For now, this is a basic shell layout
+  // Check if the user is a member of any clinic
+  const { data: memberships, error } = await supabase
+    .from("clinic_members")
+    .select("clinic_id, clinics(name)")
+    .eq("user_id", user.id);
+
+  if (error || !memberships || memberships.length === 0) {
+    redirect("/onboarding");
+  }
+
+  // For now, we'll just use the first clinic as the active one
+  // Later we can implement a clinic switcher
+  const activeClinic = (memberships[0].clinics as unknown) as { name: string };
 
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Sidebar */}
       <aside className="w-64 flex-col border-r border-gray-200 bg-white hidden md:flex">
         <div className="flex h-16 items-center px-6 border-b border-gray-100">
-          <span className="text-lg font-bold tracking-tight text-gray-900">Aesthetic OS</span>
+          <span className="text-lg font-bold tracking-tight text-gray-900 truncate">
+            {activeClinic.name || "Aesthetic OS"}
+          </span>
         </div>
         <nav className="flex-1 space-y-1 px-4 py-6">
-          <a href="#" className="flex items-center rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-900">
+          <a href="/dashboard" className="flex items-center rounded-lg bg-gray-100 px-3 py-2 text-sm font-medium text-gray-900">
             Dashboard
           </a>
           <a href="#" className="flex items-center rounded-lg px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900">
@@ -51,8 +65,8 @@ export default async function DashboardLayout({ children }: { children: ReactNod
             <span className="text-lg font-bold">Aesthetic OS</span>
           </div>
           <div className="ml-auto flex items-center space-x-4">
-            <form action="/auth/signout" method="POST">
-              <Button variant="ghost" size="sm">Sign Out</Button>
+            <form action={signout}>
+              <Button variant="ghost" size="sm" type="submit">Sign Out</Button>
             </form>
           </div>
         </header>
@@ -63,3 +77,4 @@ export default async function DashboardLayout({ children }: { children: ReactNod
     </div>
   );
 }
+

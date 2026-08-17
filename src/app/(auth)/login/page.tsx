@@ -1,11 +1,13 @@
-import { login, signup } from "../actions";
+import { login } from "../actions";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string };
+  searchParams: Promise<{ error?: string }>;
 }) {
+  const { error } = await searchParams;
   return (
     <div className="flex h-screen w-full items-center justify-center bg-gray-50/50">
       <div className="w-full max-w-sm rounded-2xl border border-gray-100 bg-white p-8 shadow-xl shadow-gray-200/40">
@@ -14,9 +16,9 @@ export default function LoginPage({
           <p className="mt-2 text-sm text-gray-500">Sign in to your workspace</p>
         </div>
 
-        {searchParams.error && (
+        {error && (
           <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-600">
-            {searchParams.error}
+            {error}
           </div>
         )}
 
@@ -52,12 +54,16 @@ export default function LoginPage({
             <Button formAction={login} className="w-full">
               Sign In
             </Button>
-            <Button formAction={signup} variant="outline" className="w-full">
-              Create Account
-            </Button>
+            <div className="text-center text-sm text-gray-500 mt-2">
+              Don&apos;t have an account?{" "}
+              <Link href="/signup" className="text-black font-medium hover:underline">
+                Sign Up
+              </Link>
+            </div>
           </div>
         </form>
       </div>
     </div>
   );
 }
+
