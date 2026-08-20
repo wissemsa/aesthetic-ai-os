@@ -8,6 +8,7 @@ import {
   Users,
   Target,
   Calendar,
+  MessageSquare,
   Sparkles,
   LogOut,
 } from "lucide-react";
@@ -58,6 +59,13 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           >
             <Calendar className="h-4 w-4 text-zinc-400" />
             Appointments
+          </Link>
+          <Link
+            href="/conversations"
+            className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-50 transition"
+          >
+            <MessageSquare className="h-4 w-4 text-zinc-400" />
+            Messages
           </Link>
         </nav>
 

@@ -20,7 +20,8 @@ export type ActivityType =
   | "status_change"
   | "lead_converted"
   | "contact"
-  | "system";
+  | "system"
+  | "communication";
 
 export type GenderType = "female" | "male" | "other" | "prefer_not_to_say";
 

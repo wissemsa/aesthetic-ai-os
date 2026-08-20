@@ -3,12 +3,15 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveClinicContext } from "@/lib/clinic";
 import { Patient, Activity } from "@/types/crm";
 import { Appointment } from "@/types/appointment";
+import { ConversationWithDetails } from "@/types/communications";
 import { toggleArchivePatient, addPatientNote } from "../actions";
 import { ArchiveBadge } from "@/components/crm/status-badge";
 import { ActivityTimeline } from "@/components/crm/activity-timeline";
 import { NoteForm } from "@/components/crm/note-form";
 import { ArchiveButton } from "@/components/crm/archive-button";
 import { AppointmentStatusBadge } from "@/components/appointments/appointment-status-badge";
+import { NewConversationModal } from "@/components/communications/new-conversation-modal";
+import { ChannelBadge, StatusBadge } from "@/components/communications/channel-badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
@@ -21,6 +24,7 @@ import {
   Clock,
   CalendarPlus,
   ChevronRight,
+  MessageSquare,
 } from "lucide-react";
 
 export default async function PatientDetailPage({
@@ -65,6 +69,16 @@ export default async function PatientDetailPage({
     .order("created_at", { ascending: false });
 
   const activities = (activitiesData as Activity[]) || [];
+
+  // Fetch conversations for patient
+  const { data: patientConversationsData } = await supabase
+    .from("conversations")
+    .select("*, appointments(id, start_time, treatment_type)")
+    .eq("patient_id", id)
+    .eq("clinic_id", ctx.clinicId)
+    .order("last_message_at", { ascending: false });
+
+  const patientConversations = (patientConversationsData as ConversationWithDetails[]) || [];
 
   const initials = `${patient.first_name[0] || ""}${
     patient.last_name[0] || ""
@@ -119,6 +133,10 @@ export default async function PatientDetailPage({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <NewConversationModal
+            patientId={patient.id}
+            patientName={`${patient.first_name} ${patient.last_name}`}
+          />
           <Link href={`/appointments/new?patient_id=${patient.id}`}>
             <Button size="sm" className="gap-1.5 shadow-sm">
               <CalendarPlus className="h-3.5 w-3.5" />
@@ -326,8 +344,62 @@ export default async function PatientDetailPage({
           </div>
         </div>
 
-        {/* Right Column: Timeline & Notes */}
+        {/* Right Column: Timeline & Notes & Conversations */}
         <div className="space-y-6 lg:col-span-2">
+          {/* Communications & Conversations Card */}
+          <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-800">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-zinc-500" />
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                  Communications & Messages ({patientConversations.length})
+                </h3>
+              </div>
+              <NewConversationModal
+                patientId={patient.id}
+                patientName={`${patient.first_name} ${patient.last_name}`}
+              />
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {patientConversations.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-zinc-200 p-6 text-center text-xs text-zinc-400 dark:border-zinc-800">
+                  No conversations started yet for this patient.
+                </div>
+              ) : (
+                patientConversations.map((c) => (
+                  <Link
+                    key={c.id}
+                    href={`/conversations?id=${c.id}`}
+                    className="flex items-center justify-between p-3 rounded-xl border border-zinc-100 bg-zinc-50/50 hover:bg-zinc-100/80 transition dark:border-zinc-800/80 dark:bg-zinc-800/40 dark:hover:bg-zinc-800 text-xs"
+                  >
+                    <div className="space-y-1 min-w-0 pr-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                          {c.subject || "Untitled Conversation"}
+                        </span>
+                        <ChannelBadge channel={c.channel} />
+                      </div>
+                      <p className="text-zinc-500 text-[11px]">
+                        Last activity:{" "}
+                        {new Date(c.last_message_at).toLocaleDateString([], {
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <StatusBadge status={c.status} />
+                      <ChevronRight className="h-4 w-4 text-zinc-400" />
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </div>
+
           {/* Add Note Section */}
           <div className="rounded-2xl border border-zinc-200/80 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
             <div className="mb-3 flex items-center justify-between">
